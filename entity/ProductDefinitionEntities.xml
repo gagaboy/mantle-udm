@@ -596,7 +596,7 @@ along with this software (see the LICENSE.md file). If not, see
         <relationship type="many" related="mantle.product.feature.ProductCategoryFeatGrpAppl" short-alias="featureGroups">
             <key-map field-name="productCategoryId"/></relationship>
 
-        <index name="CATEGORY_ID_PSEUDO" unique="true"><index-field name="pseudoId"/></index>
+        <index name="CATEGORY_ID_PSEUDO"><index-field name="pseudoId"/></index>
         <seed-data>
             <!-- Product Category Type -->
             <moqui.basic.EnumerationType description="Product Category Type" enumTypeId="ProductCategoryType"/>
