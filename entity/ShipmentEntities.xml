@@ -53,6 +53,7 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="addtlShippingCharge" type="currency-amount"/>
         <field name="addtlShippingChargeDesc" type="text-medium"/>
 
+        <field name="signatureRequiredEnumId" type="id"/>
         <field name="handlingInstructions" type="text-long"/>
         <field name="otherPartyOrderId" type="text-short"/>
         <field name="systemMessageRemoteId" type="id"/>
@@ -71,6 +72,8 @@ along with this software (see the LICENSE.md file). If not, see
             <key-map field-name="receiveWorkEffortId"/></relationship>
         <relationship type="one" title="Cost" related="moqui.basic.Uom" short-alias="costUom">
             <key-map field-name="costUomId"/></relationship>
+        <relationship type="one" title="SignatureRequired" related="moqui.basic.Enumeration" short-alias="signatureRequiredEnum">
+            <key-map field-name="signatureRequiredEnumId"/></relationship>
         <relationship type="one" related="moqui.service.message.SystemMessageRemote"/>
 
         <relationship type="many" related="mantle.shipment.ShipmentContent" short-alias="contents">
@@ -132,6 +135,14 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="ShipShipped" toStatusId="ShipCancelled" transitionName="Cancel"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="ShipDelivered" toStatusId="ShipShipped" transitionName="Un-deliver"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="ShipShipped" toStatusId="ShipPacked" transitionName="Un-ship"/>
+
+            <!-- Signature Required -->
+            <moqui.basic.EnumerationType description="Signature Required" enumTypeId="SignatureRequired"/>
+            <moqui.basic.Enumeration enumCode="" description="None" enumId="PsrNone" sequenceNum="1" enumTypeId="SignatureRequired"/>
+            <moqui.basic.Enumeration enumCode="STANDARD" description="Standard" enumId="PsrStandard" sequenceNum="2" enumTypeId="SignatureRequired"/>
+            <moqui.basic.Enumeration enumCode="ADULT" description="Adult" enumId="PsrAdult" sequenceNum="3" enumTypeId="SignatureRequired"/>
+            <moqui.basic.Enumeration enumCode="CERTIFIED" description="Certified (USPS)" enumId="PsrCertified" sequenceNum="4" enumTypeId="SignatureRequired"/>
+            <moqui.basic.Enumeration enumCode="INDIRECT" description="Indirect (FedEx)" enumId="PsrIndirect" sequenceNum="5" enumTypeId="SignatureRequired"/>
         </seed-data>
         <master>
             <detail relationship="type"/>
@@ -169,7 +180,7 @@ along with this software (see the LICENSE.md file). If not, see
     </entity>
     <extend-entity entity-name="SystemMessage" package="moqui.service.message">
         <field name="shipmentId" type="id"/>
-        <relationship type="one" related="mantle.shipment.Shipment"/>
+        <relationship type="one" related="mantle.shipment.Shipment" short-alias="shipment"/>
     </extend-entity>
 
     <entity entity-name="ShipmentBoxType" package="mantle.shipment" cache="true">
@@ -399,6 +410,7 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="originFacilityId" type="id"/>
         <field name="originPostalContactMechId" type="id"/>
         <field name="originTelecomContactMechId" type="id"/>
+        <field name="returnPostalContactMechId" type="id"/>
         <field name="destinationFacilityId" type="id"/>
         <field name="destPostalContactMechId" type="id" enable-audit-log="update"/>
         <field name="destTelecomContactMechId" type="id"/>
@@ -443,16 +455,22 @@ along with this software (see the LICENSE.md file). If not, see
             <key-map field-name="carrierPartyId"/></relationship>
         <relationship type="one" title="ShipmentMethod" related="moqui.basic.Enumeration" short-alias="shipmentMethod">
             <key-map field-name="shipmentMethodEnumId"/></relationship>
+
         <relationship type="one" title="Origin" related="mantle.facility.Facility" short-alias="originFacility">
             <key-map field-name="originFacilityId"/></relationship>
         <relationship type="one-nofk" title="Origin" related="mantle.party.contact.ContactMech" short-alias="originPostal">
             <key-map field-name="originPostalContactMechId"/></relationship>
-        <relationship type="one" title="Origin" related="mantle.party.contact.PostalAddress">
+        <relationship type="one" title="Origin" related="mantle.party.contact.PostalAddress" short-alias="originPostalAddress">
             <key-map field-name="originPostalContactMechId"/></relationship>
         <relationship type="one-nofk" title="Origin" related="mantle.party.contact.ContactMech" short-alias="originTelecom">
             <key-map field-name="originTelecomContactMechId"/></relationship>
         <relationship type="one" title="Origin" related="mantle.party.contact.TelecomNumber">
             <key-map field-name="originTelecomContactMechId"/></relationship>
+        <relationship type="one-nofk" title="Return" related="mantle.party.contact.ContactMech" short-alias="returnPostal">
+            <key-map field-name="returnPostalContactMechId"/></relationship>
+        <relationship type="one" title="Return" related="mantle.party.contact.PostalAddress" short-alias="returnPostalAddress">
+            <key-map field-name="returnPostalContactMechId"/></relationship>
+
         <relationship type="one" title="Destination" related="mantle.facility.Facility" short-alias="destFacility">
             <key-map field-name="destinationFacilityId"/></relationship>
         <relationship type="one-nofk" title="Destination" related="mantle.party.contact.ContactMech" short-alias="destPostal">
