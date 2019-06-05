@@ -197,8 +197,9 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderHold" toStatusId="OrderApproved" transitionName="Approve"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderHold" toStatusId="OrderCancelled" transitionName="Cancel"/>
 
-            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderCompleted" transitionName="Order Completed"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderCancelled" transitionName="Order Cancelled"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderApproved" transitionName="Approve (un-send)"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderCompleted" transitionName="Complete"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderCancelled" transitionName="Cancel"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderCompleted" toStatusId="OrderApproved" transitionName="Approve (un-complete)"/>
 
             <!-- Sales Channel -->
@@ -264,8 +265,10 @@ along with this software (see the LICENSE.md file). If not, see
     </entity>
     <extend-entity entity-name="SystemMessage" package="moqui.service.message">
         <field name="orderId" type="id"/>
+        <field name="orderPartSeqId" type="id"/>
         <field name="orderRevision" type="number-integer"/>
         <relationship type="one" related="mantle.order.OrderHeader"/>
+        <relationship type="one-nofk" related="mantle.order.OrderPart"/>
         <!-- should have auto based on FK: <index name="SYSMSG_ORDER"><index-field name="orderId"/></index> -->
     </extend-entity>
     <entity entity-name="OrderSystemMessage" package="mantle.order" cache="never">
@@ -400,7 +403,7 @@ along with this software (see the LICENSE.md file). If not, see
             to find the Shipment but for adjustments and such, possibly prorated for a particular Shipment, this is
             the way to find it.</description></field>
         <field name="quantity" type="number-decimal"/>
-        <field name="amount" type="currency-amount"/>
+        <field name="amount" type="currency-precise"/>
         <relationship type="one" related="mantle.order.OrderItem" short-alias="orderItem">
             <key-map field-name="orderId"/><key-map field-name="orderItemSeqId"/></relationship>
         <relationship type="one" related="mantle.account.invoice.InvoiceItem" short-alias="invoiceItem">
