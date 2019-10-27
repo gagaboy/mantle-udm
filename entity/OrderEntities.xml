@@ -43,6 +43,9 @@ along with this software (see the LICENSE.md file). If not, see
         <relationship type="one" title="OrderContentType" related="moqui.basic.Enumeration" short-alias="type">
             <key-map field-name="orderContentTypeEnumId"/></relationship>
         <relationship type="one" related="moqui.security.UserAccount"/>
+        <seed-data>
+            <moqui.basic.EnumerationType description="Order Content Type" enumTypeId="OrderContentType"/>
+        </seed-data>
     </entity>
     <entity entity-name="OrderEmailMessage" package="mantle.order" cache="never">
         <field name="orderId" type="id" is-pk="true"/>
@@ -123,6 +126,7 @@ along with this software (see the LICENSE.md file). If not, see
 
         <index name="ORDERDISP_ID_IDX"><index-field name="displayId"/></index>
         <index name="ORDEREXT_ID_IDX"><index-field name="externalId"/></index>
+        <index name="ORDERORIG_ID_IDX"><index-field name="originId"/></index>
 
         <seed-data>
             <!-- Order Header Status -->
@@ -437,9 +441,9 @@ along with this software (see the LICENSE.md file). If not, see
 
         <field name="facilityId" type="id" enable-audit-log="update"><description>The Facility to fulfill the order from
             (if null look up from ProductStore), or for purchase orders the Facility the order will be shipped to.</description></field>
-
         <field name="carrierPartyId" type="id" enable-audit-log="update"/>
         <field name="shipmentMethodEnumId" type="id" enable-audit-log="update"/>
+        <field name="tradeTermEnumId" type="id"/>
 
         <field name="postalContactMechId" type="id" enable-audit-log="update"/>
         <field name="telecomContactMechId" type="id"/>
@@ -495,6 +499,10 @@ along with this software (see the LICENSE.md file). If not, see
             <key-map field-name="carrierPartyId"/></relationship>
         <relationship type="one" title="ShipmentMethod" related="moqui.basic.Enumeration" short-alias="shipmentMethod">
             <key-map field-name="shipmentMethodEnumId"/></relationship>
+        <!-- For tradeTermEnumId terms are defined with enumTypeId="TermType" in AccountingAccountEntities.xml -->
+        <relationship type="one" title="TermType" related="moqui.basic.Enumeration" short-alias="tradeTermEnum">
+            <key-map field-name="tradeTermEnumId"/></relationship>
+
         <relationship type="one" title="Postal" related="mantle.party.contact.ContactMech" short-alias="postal">
             <key-map field-name="postalContactMechId"/></relationship>
         <relationship type="one" related="mantle.party.contact.PostalAddress" short-alias="postalAddress">
@@ -582,6 +590,8 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="customerPartyId" type="id"/>
         <field name="vendorPartyId" type="id"/>
         <field name="paymentMethodId" type="id"><description>Customer PaymentMethod to refund to, override original</description></field>
+        <field name="useSingleRefundPayment" type="text-indicator">
+            <description>If Y create a single refund Payment, otherwise look for Credit Card order payments and refund first against those</description></field>
         <field name="finAccountId" type="id"/>
         <!-- maybe support later: <field name="billingAccountId" type="id"/> -->
         <field name="entryDate" type="date-time"/>
@@ -623,6 +633,10 @@ along with this software (see the LICENSE.md file). If not, see
 
         <relationship type="many" related="mantle.order.return.ReturnItem" short-alias="items">
             <key-map field-name="returnId"/></relationship>
+
+        <index name="RETURN_DISPLAY"><index-field name="displayId"/></index>
+        <index name="RETURN_EXTERNAL"><index-field name="externalId"/></index>
+        <index name="RETURN_ORIGIN"><index-field name="originId"/></index>
 
         <seed-data>
             <!-- Return Header and Item Status -->

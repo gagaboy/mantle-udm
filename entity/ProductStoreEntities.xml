@@ -33,9 +33,9 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="storeDomain" type="text-short"><description>Store domain for use in emails</description></field>
         <field name="profileUrlPath" type="text-medium"><description>Path to profile page for use in emails</description></field>
         <field name="wikiSpaceId" type="id"><description>For a WikiSpace mounted as content, superceded by ProductStoreWikiSpace with spaceTypeEnumId=PstFull</description></field>
-        <field name="contentDataDocumentId" type="text-medium"><description>The dataDocumentId to use for search of content pages in wikiSpaceId</description></field>
-        <field name="blogDataDocumentId" type="text-medium"><description>The dataDocumentId to use for search of blog entries</description></field>
-        <field name="productDataDocumentId" type="text-medium"><description>The dataDocumentId to use for product search</description></field>
+        <field name="contentDataDocumentId" type="id"><description>The dataDocumentId to use for search of content pages in wikiSpaceId</description></field>
+        <field name="blogDataDocumentId" type="id"><description>The dataDocumentId to use for search of blog entries</description></field>
+        <field name="productDataDocumentId" type="id"><description>The dataDocumentId to use for product search</description></field>
 
         <field name="defaultLocale" type="text-short"/>
         <field name="defaultCurrencyUomId" type="id"/>
@@ -346,6 +346,8 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.Enumeration description="Ship Label From Name" enumId="PsstShipLabelName" enumTypeId="ProductStoreSettingType"/>
             <moqui.basic.Enumeration description="Ship Label From Company" enumId="PsstShipLabelCompany" enumTypeId="ProductStoreSettingType"/>
             <moqui.basic.Enumeration description="Ship Restrict Carriers (true/false)" enumId="PsstShipRestrictCarriers" enumTypeId="ProductStoreSettingType"/>
+            <moqui.basic.Enumeration description="Shipping Label Cost Markup Percent" enumId="PsstShipLabelMarkup" enumTypeId="ProductStoreSettingType"/>
+            <moqui.basic.Enumeration description="Shipping Order Charge Markup Percent" enumId="PsstShipOrderMarkup" enumTypeId="ProductStoreSettingType"/>
 
             <moqui.basic.Enumeration description="Template Location Shipment Insert" enumId="PsstTemplateShipmentInsert" enumTypeId="ProductStoreSettingType"/>
             <moqui.basic.Enumeration description="Template Location Shipment Pick Sheet" enumId="PsstTemplateShipmentPick" enumTypeId="ProductStoreSettingType"/>
@@ -358,6 +360,8 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.Enumeration description="Order Approve Warn New Customer (false to disable)" enumId="PsstOrdApproveNewCust" enumTypeId="ProductStoreSettingType"/>
             <moqui.basic.Enumeration description="Order Approve Warn Address not Valid (false to disable)" enumId="PsstOrdApproveAddrNotValid" enumTypeId="ProductStoreSettingType"/>
             <moqui.basic.Enumeration description="Order Approve Warn Address Missing (false to disable)" enumId="PsstOrdApproveAddrMissing" enumTypeId="ProductStoreSettingType"/>
+            <moqui.basic.Enumeration description="Order Approve Warn Large Order - Total Above (default 0, 0 to disable)" enumId="PsstOrdApproveLargeOrder" enumTypeId="ProductStoreSettingType"/>
+            <moqui.basic.Enumeration description="Order Approve Warn Large Web Order - Total Above (default 0, 0 to disable)" enumId="PsstOrdApproveLargeWebOrder" enumTypeId="ProductStoreSettingType"/>
             <moqui.basic.Enumeration description="Order Approve Warn Std Devs Over Avg Total (default 3.0, 0 to disable)" enumId="PsstOrdApproveStdDevTotal" enumTypeId="ProductStoreSettingType"/>
             <moqui.basic.Enumeration description="Order Approve Warn Std Devs Over Avg Product Qty (default 3.0, 0 to disable)" enumId="PsstOrdApproveStdDevProdQty" enumTypeId="ProductStoreSettingType"/>
             <moqui.basic.Enumeration description="Order Approve Warn Inventory Not Available (false to disable)" enumId="PsstOrdApproveInventoryNotAvail" enumTypeId="ProductStoreSettingType"/>
@@ -381,10 +385,17 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="billingAccount" type="text-short"><description>Third party or other carrier account number</description></field>
         <field name="billingZip" type="text-short"/>
         <field name="billingCountry" type="text-short"><description>For Shippo this is the 2 letter ISO country code</description></field>
+        <field name="defaultTradeTermEnumId" type="id"/>
+        <field name="customsCertify" type="text-short"/>
+        <field name="customsCertifySigner" type="text-short"/>
+        <field name="customsContentsType" type="text-short"/>
         <relationship type="one" related="mantle.product.store.ProductStore" short-alias="store"/>
         <relationship type="one" title="Carrier" related="mantle.party.Party" short-alias="carrier">
             <key-map field-name="carrierPartyId"/></relationship>
         <relationship type="one" related="mantle.shipment.carrier.ShippingGatewayConfig" short-alias="config"/>
+        <!-- For defaultTradeTermEnumId terms are defined with enumTypeId="TermType" in AccountingAccountEntities.xml -->
+        <relationship type="one" title="TermType" related="moqui.basic.Enumeration" short-alias="defaultTradeTermEnum">
+            <key-map field-name="defaultTradeTermEnumId"/></relationship>
     </entity>
     <entity entity-name="ProductStoreShipOption" package="mantle.product.store">
         <field name="productStoreId" type="id" is-pk="true"/>
