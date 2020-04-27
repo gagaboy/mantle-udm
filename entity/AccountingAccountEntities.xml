@@ -466,8 +466,8 @@ along with this software (see the LICENSE.md file). If not, see
 
             <!-- Incoming invoices should start in Received and then move to Approved, then Payment Sent -->
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceIncoming" toStatusId="InvoiceReceived" transitionName="Receive"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceIncoming" toStatusId="InvoiceApproved" transitionName="Approve"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceReceived" toStatusId="InvoiceApproved" transitionName="Approve"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceIncoming" toStatusId="InvoiceApproved" transitionName="Approve" userPermissionId="INVOICE_APPROVE"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceReceived" toStatusId="InvoiceApproved" transitionName="Approve" userPermissionId="INVOICE_APPROVE"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceApproved" toStatusId="InvoiceReceived" transitionName="Resume Changes"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceApproved" toStatusId="InvoicePmtSent" transitionName="Payment Already Sent"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoicePmtSent" toStatusId="InvoiceBilledThrough" transitionName="Bill Through"/>
@@ -533,14 +533,14 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusFlowItem statusFlowId="InvoicePayable" statusId="InvoiceCancelled"/>
 
             <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceIncoming" toStatusId="InvoiceReceived" transitionSequence="1" transitionName="Receive"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceIncoming" toStatusId="InvoiceApproved" transitionSequence="2" transitionName="Approve"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceIncoming" toStatusId="InvoiceApproved" transitionSequence="2" transitionName="Approve" userPermissionId="INVOICE_APPROVE"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceIncoming" toStatusId="InvoiceCancelled" transitionSequence="3" transitionName="Cancel"/>
 
             <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceReceived" toStatusId="InvoiceAcked" transitionSequence="1" transitionName="Acknowledged"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceReceived" toStatusId="InvoiceApproved" transitionSequence="2" transitionName="Approve"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceReceived" toStatusId="InvoiceApproved" transitionSequence="2" transitionName="Approve" userPermissionId="INVOICE_APPROVE"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceReceived" toStatusId="InvoiceCancelled" transitionSequence="3" transitionName="Cancel"/>
 
-            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceAcked" toStatusId="InvoiceApproved" transitionSequence="1" transitionName="Approve"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceAcked" toStatusId="InvoiceApproved" transitionSequence="1" transitionName="Approve" userPermissionId="INVOICE_APPROVE"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceAcked" toStatusId="InvoiceCancelled" transitionSequence="2" transitionName="Cancel"/>
 
             <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceApproved" toStatusId="InvoicePmtSent" transitionSequence="1" transitionName="Payment Sent"/>
@@ -553,9 +553,9 @@ along with this software (see the LICENSE.md file). If not, see
 
             <!-- Cross Org - Payable Side, for invoices where both from and to parties are in role OrgInternal -->
             <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceFinalized" toStatusId="InvoiceReceived" transitionSequence="1" transitionName="Receive"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceFinalized" toStatusId="InvoiceApproved" transitionSequence="2" transitionName="Approve"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceFinalized" toStatusId="InvoiceApproved" transitionSequence="2" transitionName="Approve" userPermissionId="INVOICE_APPROVE"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceSent" toStatusId="InvoiceReceived" transitionSequence="1" transitionName="Receive"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceSent" toStatusId="InvoiceApproved" transitionSequence="2" transitionName="Approve"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="InvoicePayable" statusId="InvoiceSent" toStatusId="InvoiceApproved" transitionSequence="2" transitionName="Approve" userPermissionId="INVOICE_APPROVE"/>
 
             <!-- ========== Special (hidden) Invoice StatusFlow ========== -->
             <moqui.basic.StatusFlow statusFlowId="InvoiceSpecial" statusTypeId="Invoice" description="Invoice Special"/>
@@ -830,14 +830,15 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.Enumeration description="Incoterm Carriage Paid To" parentEnumId="TtInco" enumId="TtCPT" enumCode="CPT" enumTypeId="TermType"/>
             <moqui.basic.Enumeration description="Incoterm Carriage and Insurance Paid to" parentEnumId="TtInco" enumId="TtCIP" enumCode="CIP" enumTypeId="TermType"/>
             <moqui.basic.Enumeration description="Incoterm Delivered Duty Paid" parentEnumId="TtInco" enumId="TtDDP" enumCode="DDP" enumTypeId="TermType"/>
-            <moqui.basic.Enumeration description="Incoterm Delivered at Terminal" parentEnumId="TtInco" enumId="TtDAT" enumCode="DAT" enumTypeId="TermType"/>
             <moqui.basic.Enumeration description="Incoterm Delivered at Place" parentEnumId="TtInco" enumId="TtDAP" enumCode="DAP" enumTypeId="TermType"/>
-            <!-- Incoterms deprecated in 2010: "Delivered at Frontier"; DAF, "Delivered Ex Ship"; DES, "Delivered Ex Quay"; DEQ, "Delivered Duty Unpaid"; DDU -->
+            <!-- Incoterms deprecated in 2010: "Delivered at Frontier" - DAF, "Delivered Ex Ship" - DES,
+                "Delivered Ex Quay" - DEQ, "Delivered Duty Unpaid" - DDU, "Delivered at Terminal" - DAT -->
             <!-- NOTE: in general DDU => DAP, especially for fulfill to customer -->
             <moqui.basic.Enumeration description="Incoterm Delivered At Frontier" parentEnumId="TtInco" enumId="TtDAF" enumCode="DAF" enumTypeId="TermType"/>
             <moqui.basic.Enumeration description="Incoterm Delivered Ex Ship" parentEnumId="TtInco" enumId="TtDES" enumCode="DES" enumTypeId="TermType"/>
             <moqui.basic.Enumeration description="Incoterm Delivered Ex Quay" parentEnumId="TtInco" enumId="TtDEQ" enumCode="DEQ" enumTypeId="TermType"/>
             <moqui.basic.Enumeration description="Incoterm Delivered Duty Unpaid" parentEnumId="TtInco" enumId="TtDDU" enumCode="DDU" enumTypeId="TermType"/>
+            <moqui.basic.Enumeration description="Incoterm Delivered at Terminal" parentEnumId="TtInco" enumId="TtDAT" enumCode="DAT" enumTypeId="TermType"/>
 
             <moqui.basic.Enumeration description="Purchasing" enumId="TtPurchasing" enumTypeId="TermType"/>
             <moqui.basic.Enumeration description="Preferred Freight" enumId="TtFreight" enumTypeId="TermType"/>
@@ -886,6 +887,7 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="description" type="text-medium"/>
         <field name="fromDate" type="date-time"/>
         <field name="thruDate" type="date-time"/>
+        <field name="thruDateSetAuto" type="text-indicator"><description>If Y then expire (set thruDate) once allowed (no active Payment)</description></field>
         <field name="openedDate" type="date-time"/>
 
         <field name="titleOnAccount" type="text-medium"><description>Not commonly used; payment gateways generally only

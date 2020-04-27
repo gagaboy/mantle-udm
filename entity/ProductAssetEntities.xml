@@ -276,10 +276,13 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstInUse" toStatusId="AstInTransfer" transitionName="Start Transfer"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstInTransfer" toStatusId="AstInUse" transitionName="Transfer Complete (Use)"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstInStorage" toStatusId="AstInUse" transitionName="Use"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstInStorage" toStatusId="AstAvailable" transitionName="Make Available"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstInStorage" toStatusId="AstReturned" transitionName="Return"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstInStorage" toStatusId="AstDefective" transitionName="Defective"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstInStorage" toStatusId="AstInTransfer" transitionName="Start Transfer"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstInTransfer" toStatusId="AstInStorage" transitionName="Transfer Complete (Store)"/>
+
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="AstDefective" toStatusId="AstOnHold" transitionName="Not Defective"/>
 
             <!-- Depreciation Type -->
             <moqui.basic.EnumerationType description="Depreciation Type" enumTypeId="DepreciationType"/>
@@ -330,6 +333,8 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="otherAssetId" type="id"/>
         <field name="shipmentId" type="id"/>
         <field name="productId" type="id"/>
+        <field name="orderId" type="id"/>
+        <field name="orderItemSeqId" type="id"/>
         <field name="returnId" type="id"/>
         <field name="returnItemSeqId" type="id"/>
         <field name="workEffortId" type="id"/>
@@ -347,6 +352,7 @@ along with this software (see the LICENSE.md file). If not, see
             <key-map field-name="otherAssetId"/></relationship>
         <relationship type="one" related="mantle.shipment.Shipment" short-alias="shipment"/>
         <relationship type="one" related="mantle.product.Product" short-alias="product"/>
+        <relationship type="one" related="mantle.order.OrderItem" short-alias="orderItem"/>
         <relationship type="one" related="mantle.order.return.ReturnItem" short-alias="returnItem"/>
         <relationship type="one" related="mantle.work.effort.WorkEffort" short-alias="workEffort"/>
         <relationship type="one" related="mantle.product.maintenance.AssetMaintenance" short-alias="assetMaintenance"/>
