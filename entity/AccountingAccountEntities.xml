@@ -341,7 +341,11 @@ along with this software (see the LICENSE.md file). If not, see
             <description>Vendor or other invoice number.</description></field>
         <field name="otherPartyOrderId" type="text-short" enable-audit-log="update"/>
         <field name="description" type="text-medium"/>
-        <field name="currencyUomId" type="id"/>
+        <field name="currencyUomId" type="id"><description>The original (external) currency</description></field>
+        <!-- maybe better not to track these here on Invoice (or Payment, etc) because would be redundant with AcctgTrans and would need the 2 currency UOMs for from and to parties when both are internal orgs
+        <field name="baseCurrencyUomId" type="id"><description>The unit of account (base) currency used to post to the GL, must match PartyAcctgPreference.baseCurrencyUomId</description></field>
+        <field name="localCurrencyUomId" type="id"><description>The local (internal) currency, also used to post to the GL, must match PartyAcctgPreference.localCurrencyUomId</description></field>
+        -->
         <field name="overrideOrgPartyId" type="id"><description>Used to specify the organization override rather than
             using the fromPartyId and/or toPartyId (depending on which is an internal org).</description></field>
 
@@ -448,8 +452,7 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceSent" toStatusId="InvoiceAcked" transitionName="Acknowledge"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceAcked" toStatusId="InvoicePmtRecvd" transitionName="Receive Payment"/>
 
-            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceFinalized" toStatusId="InvoiceWriteOff" transitionName="Write Off"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceSent" toStatusId="InvoiceWriteOff" transitionName="Write Off"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoicePmtRecvd" toStatusId="InvoiceWriteOff" transitionName="Write Off"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceWriteOff" toStatusId="InvoicePmtRecvd" transitionName="Receive Payment"/>
 
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="InvoiceInProcess" toStatusId="InvoiceCancelled" transitionName="Cancel"/>
@@ -498,13 +501,11 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceFinalized" toStatusId="InvoiceSent" transitionSequence="1" transitionName="Sent"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceFinalized" toStatusId="InvoicePmtRecvd" transitionSequence="2" transitionName="Payment Received"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceFinalized" toStatusId="InvoiceInProcess" transitionSequence="3" transitionName="Resume Changes"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceFinalized" toStatusId="InvoiceWriteOff" transitionSequence="4" transitionName="Write Off"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceFinalized" toStatusId="InvoiceCancelled" transitionSequence="5" transitionName="Cancel"/>
 
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceSent" toStatusId="InvoicePmtRecvd" transitionSequence="1" transitionName="Payment Received"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceSent" toStatusId="InvoiceAcked" transitionSequence="2" transitionName="Acknowledged"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceSent" toStatusId="InvoiceInProcess" transitionSequence="3" transitionName="Resume Changes"/>
-            <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceSent" toStatusId="InvoiceWriteOff" transitionSequence="4" transitionName="Write Off"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceSent" toStatusId="InvoiceCancelled" transitionSequence="5" transitionName="Cancel"/>
 
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoiceAcked" toStatusId="InvoiceSent" transitionSequence="1" transitionName="Un-acknowledge"/>
@@ -516,6 +517,7 @@ along with this software (see the LICENSE.md file). If not, see
 
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoicePmtRecvd" toStatusId="InvoiceFinalized" transitionSequence="1" transitionName="Unpay"/>
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoicePmtRecvd" toStatusId="InvoiceCancelled" transitionSequence="2" transitionName="Cancel"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoicePmtRecvd" toStatusId="InvoiceWriteOff" transitionSequence="4" transitionName="Write Off"/>
 
             <!-- Cross Org - Receivable Side, for invoices where both from and to parties are in role OrgInternal -->
             <moqui.basic.StatusFlowTransition statusFlowId="InvoiceReceivable" statusId="InvoicePmtSent" toStatusId="InvoicePmtRecvd" transitionSequence="1" transitionName="Payment Received"/>
@@ -721,6 +723,7 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="facilityId" type="id"/>
         <field name="assetId" type="id"/>
         <field name="partyId" type="id"/>
+        <field name="workEffortId" type="id"/>
         <field name="quantity" type="number-decimal"/>
 
         <relationship type="one-nofk" related="mantle.account.invoice.Invoice" short-alias="invoice"/>
@@ -728,6 +731,7 @@ along with this software (see the LICENSE.md file). If not, see
         <relationship type="one" related="mantle.facility.Facility" short-alias="facility"/>
         <relationship type="one" related="mantle.product.asset.Asset" short-alias="asset"/>
         <relationship type="one" related="mantle.party.Party" short-alias="party"/>
+        <relationship type="one" related="mantle.work.effort.WorkEffort" short-alias="workEffort"/>
     </entity>
     <entity entity-name="InvoiceItemAssoc" package="mantle.account.invoice" cache="never">
         <field name="invoiceItemAssocId" type="id" is-pk="true"/>
@@ -781,16 +785,20 @@ along with this software (see the LICENSE.md file). If not, see
             <key-map field-name="invoiceId"/><key-map field-name="invoiceItemSeqId"/></relationship>
         <relationship type="one" related="mantle.account.invoice.SettlementTerm"/>
     </entity>
-    <entity entity-name="SettlementTerm" package="mantle.account.invoice">
+    <entity entity-name="SettlementTerm" package="mantle.account.invoice" cache="true">
         <field name="settlementTermId" type="id" is-pk="true"/>
         <field name="termTypeEnumId" type="id"/>
         <field name="description" type="text-medium"/>
         <field name="termValue" type="number-decimal"/>
         <field name="termValueUomId" type="id"/>
+        <field name="orderPmtServiceRegisterId" type="id"><description>Use ServiceRegister.serviceTypeEnumId = 'SettleTermOrderPmt';
+                service will receive in-parameters: orderId, orderPartSeqId, and settlementTermId</description></field>
         <relationship type="one" title="TermType" related="moqui.basic.Enumeration">
             <key-map field-name="termTypeEnumId"/></relationship>
         <relationship type="one" title="TermValue" related="moqui.basic.Uom">
             <key-map field-name="termValueUomId"/></relationship>
+        <relationship type="one" related="moqui.service.ServiceRegister" short-alias="orderPmtServiceRegister">
+            <key-map field-name="orderPmtServiceRegisterId"/></relationship>
         <seed-data>
             <!-- Term Type; these are used for AgreementTerm as well -->
             <moqui.basic.EnumerationType description="Term Type" enumTypeId="TermType"/>
@@ -844,6 +852,12 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.Enumeration description="Preferred Freight" enumId="TtFreight" enumTypeId="TermType"/>
             <moqui.basic.Enumeration description="Other" enumId="TtOther" enumTypeId="TermType"/>
 
+            <moqui.basic.Enumeration description="Payment Term Types" enumId="EngPaymentTermType" enumTypeId="EnumGroup"/>
+            <moqui.basic.EnumGroupMember enumGroupEnumId="EngPaymentTermType" enumId="TtFinPaymentDays"/>
+            <moqui.basic.EnumGroupMember enumGroupEnumId="EngPaymentTermType" enumId="TtFinPaymentDisc"/>
+            <moqui.basic.EnumGroupMember enumGroupEnumId="EngPaymentTermType" enumId="TtFinPaymentDayCurMonth"/>
+            <moqui.basic.EnumGroupMember enumGroupEnumId="EngPaymentTermType" enumId="TtFinPaymentDayNextMonth"/>
+
             <!-- NOTE: SettlementTerm is not an Enumeration because it needs additional fields -->
             <mantle.account.invoice.SettlementTerm settlementTermId="Immediate" termTypeEnumId="TtFinPaymentDays"
                     description="Immediate (Due on Delivery)" termValue="0" termValueUomId="TF_day"/>
@@ -872,6 +886,9 @@ along with this software (see the LICENSE.md file). If not, see
                     description="Net Due in 30 Days, 2% Discount within 10 Days" termValue="30" termValueUomId="TF_day"/>
             <mantle.account.invoice.SettlementTerm settlementTermId="Net45Disc2Pct15" termTypeEnumId="TtFinPaymentDisc"
                     description="Net Due in 45 Days, 2% Discount within 15 Days" termValue="45" termValueUomId="TF_day"/>
+
+            <!-- ServiceRegisterType -->
+            <moqui.basic.Enumeration description="Settlement Term - Generate Order Payments" enumId="SettleTermOrderPmt" enumTypeId="ServiceRegisterType"/>
         </seed-data>
     </entity>
 
@@ -903,6 +920,8 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="ledgerBalance" type="currency-amount"/>
         <field name="availableBalance" type="currency-amount"/>
         <field name="balanceDate" type="date-time"/>
+        <field name="loanPaymentAmount" type="currency-amount"/>
+        <field name="loanPaymentPeriodUomId" type="id"><description>Uom with uomTypeEnumId=UT_TIME_FREQ_MEASURE</description></field>
 
         <field name="currencyUomId" type="id"/>
         <field name="postalContactMechId" type="id"/>
@@ -1129,8 +1148,12 @@ along with this software (see the LICENSE.md file). If not, see
             must not be more than 20 characters</description></field>
         <field name="nachaCompanyId" type="text-short"><description>Bank-assigned Company ID for ACH transactions;
             must not be more than 10 characters</description></field>
+        <field name="nachaOdfiId" type="text-short"><description>Batch ODFI ID (Originating Depository Financial Institution),
+            8 digits, defaults to first 8 digits of nachaImmedDest (Immediate Destination ID)</description></field>
         <field name="nachaEntryDescription" type="text-short"><description>A description to be added to ACH transactions
             (such as Payroll, Order); must not be more than 10 characters</description></field>
+        <field name="nachaAddNewLine" type="text-indicator"/>
+        <field name="nachaAddOffsetRecord" type="text-indicator"/>
 
         <field name="posPayBankNumber" type="text-short">
             <description>Number specified by bank to identify bank in positive pay files</description></field>
@@ -1153,6 +1176,7 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.Enumeration description="Credit Installment" enumId="BatCreditInstallment" enumTypeId="BankAccountType"/>
             <moqui.basic.Enumeration description="Credit Open" enumId="BatCreditOpen" enumTypeId="BankAccountType"/>
             <moqui.basic.Enumeration description="Credit Revolving" enumId="BatCreditRevolving" enumTypeId="BankAccountType"/>
+            <moqui.basic.Enumeration description="Credit Secured" enumId="BatCreditSecured" enumTypeId="BankAccountType"/>
         </seed-data>
     </entity>
     <entity entity-name="BankAccountCheck" package="mantle.account.method" cache="never">
@@ -1365,10 +1389,12 @@ along with this software (see the LICENSE.md file). If not, see
             automatically on auth for capture, etc.</description></field>
         <field name="orderId" type="id"><description>Set if the Payment represents the payment settings for an Order.</description></field>
         <field name="orderPartSeqId" type="id"><description>Set if the Payment represents the payment settings for an OrderPart.</description></field>
+        <field name="orderItemSeqId" type="id"><description>Set if the Payment represents the payment settings for an OrderItem.</description></field>
 
         <field name="statusId" type="id" enable-audit-log="true"/>
         <field name="effectiveDate" type="date-time" enable-audit-log="update"><description>When the payment is issued (delivered)</description></field>
         <field name="settlementDate" type="date-time"><description>When the payment is settled (confirmed)</description></field>
+        <field name="dueDate" type="date-time"><description>Due Date for this Payment, different concept than Invoice Due Date for planned split payments, etc</description></field>
         <field name="paymentAuthCode" type="text-short"/>
         <field name="paymentRefNum" type="text-short" enable-audit-log="update"/>
         <field name="comments" type="text-medium"/>
@@ -1419,6 +1445,7 @@ along with this software (see the LICENSE.md file). If not, see
         <relationship type="one" related="mantle.account.method.PaymentGatewayConfig" short-alias="paymentGatewayConfig"/>
         <relationship type="one" related="mantle.order.OrderHeader" short-alias="orderHeader"/>
         <relationship type="one-nofk" related="mantle.order.OrderPart" short-alias="orderPart"/>
+        <relationship type="one-nofk" related="mantle.order.OrderItem" short-alias="orderItem"/>
         <relationship type="one" title="PayDistributionGroup" related="moqui.basic.Enumeration" short-alias="distGroup">
             <key-map field-name="distGroupEnumId"/></relationship>
 
@@ -1548,7 +1575,7 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="PmntDelivered" toStatusId="PmntVoid" transitionName="Void"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="PmntDelivered" toStatusId="PmntDeclined" transitionName="Decline"/>
 
-            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="PmntConfirmed" toStatusId="PmntDelivered" transitionName="Uncomfirm"/>
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="PmntConfirmed" toStatusId="PmntDelivered" transitionName="Unconfirm"/>
             <!-- deprecated: <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="PmntConfirmed" toStatusId="PmntRefunded" transitionName="Refund"/> -->
 
             <!-- Payment Reconcile Status -->

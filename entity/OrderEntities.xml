@@ -35,13 +35,19 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="orderContentTypeEnumId" type="id"/>
         <field name="orderId" type="id"/>
         <field name="orderItemSeqId" type="id"/>
+        <field name="partyId" type="id"><description>The Party the content is for</description></field>
+        <field name="roleTypeId" type="id"/>
         <field name="contentLocation" type="text-medium"/>
         <field name="description" type="text-long"/>
         <field name="contentDate" type="date-time" default="ec.user.nowTimestamp"/>
+        <field name="viewedDate" type="date-time" enable-audit-log="true"/>
         <field name="userId" type="id" default="ec.user.userId"/>
-        <relationship type="one" related="mantle.order.OrderHeader"/>
         <relationship type="one" title="OrderContentType" related="moqui.basic.Enumeration" short-alias="type">
             <key-map field-name="orderContentTypeEnumId"/></relationship>
+        <relationship type="one" related="mantle.order.OrderHeader" short-alias="orderHeader"/>
+        <relationship type="one-nofk" related="mantle.order.OrderItem" short-alias="orderItem"/>
+        <relationship type="one" related="mantle.party.Party" short-alias="party"/>
+        <relationship type="one" related="mantle.party.RoleType" short-alias="roleType"/>
         <relationship type="one" related="moqui.security.UserAccount"/>
         <seed-data>
             <moqui.basic.EnumerationType description="Order Content Type" enumTypeId="OrderContentType"/>
@@ -51,8 +57,12 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="orderId" type="id" is-pk="true"/>
         <field name="emailMessageId" type="id" is-pk="true"/>
         <field name="orderRevision" type="number-integer"/>
+        <field name="partyId" type="id"><description>The Party the email was sent to, for different emails sent to different parties associated with an order</description></field>
+        <field name="roleTypeId" type="id"/>
         <relationship type="one" related="mantle.order.OrderHeader" short-alias="orderHeader"/>
         <relationship type="one" related="moqui.basic.email.EmailMessage" short-alias="emailMessage"/>
+        <relationship type="one" related="mantle.party.Party" short-alias="party"/>
+        <relationship type="one" related="mantle.party.RoleType" short-alias="roleType"/>
     </entity>
     <entity entity-name="OrderHeader" package="mantle.order" short-alias="orders" cache="never">
         <field name="orderId" type="id" is-pk="true"/>
@@ -61,7 +71,10 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="entryDate" type="date-time"/>
         <field name="placedDate" type="date-time"/>
         <field name="approvedDate" type="date-time"/>
+        <field name="completedDate" type="date-time"/>
         <field name="statusId" type="id" enable-audit-log="true"/>
+        <field name="processingStatusId" type="id" enable-audit-log="true">
+            <description>Sub-status for use when statusId=OrderProcessing for custom pre-approve status flows</description></field>
         <field name="orderRevision" type="number-integer"/>
 
         <field name="currencyUomId" type="id"/>
@@ -69,11 +82,12 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="productStoreId" type="id"/>
         <field name="salesChannelEnumId" type="id"/>
 
-        <field name="terminalId" type="text-short"/>
+        <field name="terminalId" type="text-short"><description>ID for the terminal, such as a POS system, where the order was recorded</description></field>
         <field name="displayId" type="text-short"><description>ID to display to customers, can be different from orderId and/or externalId</description></field>
         <field name="externalId" type="text-short"><description>ID for the order in the direct upstream system it came from if it came from an external system</description></field>
         <field name="externalRevision" type="text-short"/>
-        <field name="originId" type="text-short"><description>ID for the order in the original system it came from if not the direct upstream system</description></field>
+        <field name="originId" type="text-short"><description>ID for the order in the original system it came from (system of record) if not the direct upstream system</description></field>
+        <field name="originUrl" type="text-medium"><description>URL to view the order on the original system it came from</description></field>
         <field name="syncStatusId" type="id"/>
         <field name="systemMessageRemoteId" type="id"/>
 
@@ -89,6 +103,8 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="grandTotal" type="currency-amount"/>
 
         <relationship type="one" title="OrderHeader" related="moqui.basic.StatusItem" short-alias="status"/>
+        <relationship type="one" title="OrderProcessing" related="moqui.basic.StatusItem" short-alias="processingStatus">
+            <key-map field-name="processingStatusId"/></relationship>
         <relationship type="one" title="Currency" related="moqui.basic.Uom" short-alias="currencyUom">
             <key-map field-name="currencyUomId"/></relationship>
         <relationship type="one" related="mantle.account.billing.BillingAccount" short-alias="billingAccount"/>
@@ -142,11 +158,11 @@ along with this software (see the LICENSE.md file). If not, see
             <!-- An Open Order is like a shopping cart -->
             <moqui.basic.StatusItem description="Open (Tentative)" sequenceNum="1" statusId="OrderOpen" statusTypeId="OrderHeader"/>
             <!-- Request Quote done by Customer (or at Customer's request) -->
-            <moqui.basic.StatusItem description="Quote Requested" sequenceNum="2" statusId="OrderRequested" statusTypeId="OrderHeader"/>
+            <moqui.basic.StatusItem description="Quote Requested by Customer" sequenceNum="2" statusId="OrderRequested" statusTypeId="OrderHeader"/>
             <!-- Propose done by Vendor -->
-            <moqui.basic.StatusItem description="Proposed by Vendor" sequenceNum="3" statusId="OrderProposed" statusTypeId="OrderHeader"/>
+            <moqui.basic.StatusItem description="Quote Proposed by Vendor" sequenceNum="3" statusId="OrderProposed" statusTypeId="OrderHeader"/>
             <!-- Place done by Customer (or at Customer's request) -->
-            <moqui.basic.StatusItem description="Placed" sequenceNum="4" statusId="OrderPlaced" statusTypeId="OrderHeader"/>
+            <moqui.basic.StatusItem description="Placed by Customer" sequenceNum="4" statusId="OrderPlaced" statusTypeId="OrderHeader"/>
             <moqui.basic.StatusItem description="Held" sequenceNum="5" statusId="OrderHold" statusTypeId="OrderHeader"/>
 
             <moqui.basic.StatusItem description="Processing" sequenceNum="11" statusId="OrderProcessing" statusTypeId="OrderHeader"/>
@@ -156,9 +172,9 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusItem description="Completed" sequenceNum="21" statusId="OrderCompleted" statusTypeId="OrderHeader"/>
 
             <!-- Reject done by Vendor -->
-            <moqui.basic.StatusItem description="Rejected" sequenceNum="98" statusId="OrderRejected" statusTypeId="OrderHeader"/>
+            <moqui.basic.StatusItem description="Rejected by Vendor" sequenceNum="98" statusId="OrderRejected" statusTypeId="OrderHeader"/>
             <!-- Cancel done by Customer (or at Customer's request) -->
-            <moqui.basic.StatusItem description="Cancelled" sequenceNum="99" statusId="OrderCancelled" statusTypeId="OrderHeader"/>
+            <moqui.basic.StatusItem description="Cancelled by Customer" sequenceNum="99" statusId="OrderCancelled" statusTypeId="OrderHeader"/>
 
             <moqui.basic.StatusItem description="Wish List" sequenceNum="101" statusId="OrderWishList" statusTypeId="OrderHeader"/>
             <moqui.basic.StatusItem description="Gift Registry" sequenceNum="102" statusId="OrderGiftRegistry" statusTypeId="OrderHeader"/>
@@ -206,6 +222,7 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderHold" toStatusId="OrderApproved" transitionName="Approve"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderHold" toStatusId="OrderCancelled" transitionName="Cancel"/>
 
+            <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderProcessing" transitionName="Process (un-send, un-approve)"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderApproved" transitionName="Approve (un-send)"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderCompleted" transitionName="Complete"/>
             <moqui.basic.StatusFlowTransition statusFlowId="Default" statusId="OrderSent" toStatusId="OrderCancelled" transitionName="Cancel"/>
@@ -226,9 +243,12 @@ along with this software (see the LICENSE.md file). If not, see
             <moqui.basic.Enumeration description="EDI" enumId="ScEdi" enumTypeId="SalesChannel"/>
             <moqui.basic.Enumeration description="OAGIS" enumId="ScOagis" enumTypeId="SalesChannel"/>
             <moqui.basic.Enumeration description="Unknown" enumId="ScUnknown" enumTypeId="SalesChannel"/>
+            <moqui.basic.Enumeration description="Test Order" enumId="ScTest" enumTypeId="SalesChannel"/>
 
             <!-- Sync Status -->
             <moqui.basic.StatusType description="Sync Status" statusTypeId="Sync"/>
+            <!-- Order Processing Status: placeholder for custom processing (pre-approve) status flow -->
+            <moqui.basic.StatusType description="Order Processing Status" statusTypeId="OrderProcessing"/>
         </seed-data>
         <master>
             <detail relationship="status"/>
@@ -276,18 +296,64 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="orderId" type="id"/>
         <field name="orderPartSeqId" type="id"/>
         <field name="orderRevision" type="number-integer"/>
-        <relationship type="one" related="mantle.order.OrderHeader"/>
-        <relationship type="one-nofk" related="mantle.order.OrderPart"/>
+        <relationship type="one" related="mantle.order.OrderHeader" short-alias="orderHeader"/>
+        <relationship type="one-nofk" related="mantle.order.OrderPart" short-alias="orderPart"/>
         <!-- should have auto based on FK: <index name="SYSMSG_ORDER"><index-field name="orderId"/></index> -->
     </extend-entity>
+    <entity entity-name="OrderServiceJobRun" package="mantle.order" cache="never">
+        <field name="orderId" type="id" is-pk="true"/>
+        <field name="jobRunId" type="id" is-pk="true"/>
+        <relationship type="one" related="mantle.order.OrderHeader" short-alias="orderHeader"/>
+        <relationship type="one" related="moqui.service.job.ServiceJobRun" short-alias="systemMessage"/>
+    </entity>
     <entity entity-name="OrderSystemMessage" package="mantle.order" cache="never">
         <field name="orderId" type="id" is-pk="true"/>
         <field name="systemMessageId" type="id" is-pk="true"/>
         <field name="externalId" type="text-short"/>
         <field name="originId" type="text-short"/>
         <field name="displayId" type="text-short"/>
-        <relationship type="one" related="mantle.order.OrderHeader"/>
-        <relationship type="one" related="moqui.service.message.SystemMessage"/>
+        <relationship type="one" related="mantle.order.OrderHeader" short-alias="orderHeader"/>
+        <relationship type="one" related="moqui.service.message.SystemMessage" short-alias="systemMessage"/>
+    </entity>
+
+    <entity entity-name="OrderDecision" package="mantle.order" cache="never">
+        <field name="orderId" type="id" is-pk="true"/>
+        <field name="decisionDate" type="date-time" is-pk="true"/>
+        <field name="decisionByPartyId" type="id"/>
+        <field name="statusId" type="id"><description>OrderHeader status the decision is meant for</description></field>
+        <field name="invalidatedDate" type="date-time"/>
+        <field name="approvedAmount" type="number-decimal"/>
+        <relationship type="one" related="mantle.order.OrderHeader" short-alias="orderHeader"/>
+        <relationship type="one" title="DecisionBy" related="mantle.party.Party" short-alias="decisionByParty">
+            <key-map field-name="decisionByPartyId" related="partyId"/></relationship>
+        <!-- has title OrderHeader to use same statuses as OrderHeader -->
+        <relationship type="one" title="OrderHeader" related="moqui.basic.StatusItem" short-alias="status"/>
+        <relationship type="many" related="mantle.order.OrderDecisionReason" short-alias="decisionReasons">
+            <key-map field-name="orderId"/><key-map field-name="decisionDate"/></relationship>
+    </entity>
+    <entity entity-name="OrderDecisionReason" package="mantle.order" cache="never">
+        <field name="orderId" type="id" is-pk="true"/>
+        <field name="decisionDate" type="date-time" is-pk="true"/>
+        <field name="decisionReasonEnumId" type="id" is-pk="true"/>
+        <relationship type="one" related="mantle.order.OrderHeader" short-alias="orderHeader"/>
+        <relationship type="one" related="mantle.order.OrderDecision" short-alias="orderDecision"/>
+        <relationship type="one" title="OrderDecisionReason" related="moqui.basic.Enumeration">
+            <key-map field-name="decisionReasonEnumId"/></relationship>
+        <seed-data>
+            <moqui.basic.EnumerationType description="Order Decision Reason" enumTypeId="OrderDecisionReason"/>
+
+            <moqui.basic.Enumeration description="Fraud" enumId="OdrFraud" enumTypeId="OrderDecisionReason"/>
+            <moqui.basic.Enumeration description="Payment Not Received" enumId="OdrPayment" enumTypeId="OrderDecisionReason"/>
+            <moqui.basic.Enumeration description="Other" enumId="OdrOther" enumTypeId="OrderDecisionReason"/>
+
+            <moqui.basic.Enumeration description="Order Approved Reasons" enumId="EngOrderReasonApproved" enumTypeId="EnumGroup"/>
+            <moqui.basic.EnumGroupMember enumGroupEnumId="EngOrderReasonApproved" enumId="OdrOther"/>
+
+            <moqui.basic.Enumeration description="Order Rejected Reasons" enumId="EngOrderReasonRejected" enumTypeId="EnumGroup"/>
+            <moqui.basic.EnumGroupMember enumGroupEnumId="EngOrderReasonRejected" enumId="OdrFraud"/>
+            <moqui.basic.EnumGroupMember enumGroupEnumId="EngOrderReasonRejected" enumId="OdrPayment"/>
+            <moqui.basic.EnumGroupMember enumGroupEnumId="EngOrderReasonRejected" enumId="OdrOther"/>
+        </seed-data>
     </entity>
 
     <entity entity-name="OrderItem" package="mantle.order" short-alias="orderItems" cache="never">
@@ -297,7 +363,7 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="parentItemSeqId" type="id"/>
 
         <field name="itemTypeEnumId" type="id"/>
-        <field name="productId" type="id"/>
+        <field name="productId" type="id" enable-audit-log="update"/>
         <!-- for future reference when configurable products are supported: <field name="productConfigSavedId" type="id"/> -->
         <field name="productFeatureId" type="id"/>
         <field name="otherPartyProductId" type="text-short"/>
@@ -426,10 +492,33 @@ along with this software (see the LICENSE.md file). If not, see
         <relationship type="one" related="mantle.product.issuance.AssetIssuance" short-alias="issuance"/>
         <relationship type="one" related="mantle.shipment.Shipment" short-alias="shipment"/>
     </entity>
+    <entity entity-name="OrderItemFormResponse" package="mantle.order" cache="never">
+        <field name="orderId" type="id" is-pk="true"/>
+        <field name="orderItemSeqId" type="id" is-pk="true"/>
+        <field name="formResponseId" type="id" is-pk="true"/>
+        <field name="partyId" type="id"><description>The Party who the FormResponse information is for or about</description></field>
+        <field name="roleTypeId" type="id"/>
+        <relationship type="one" related="mantle.order.OrderItem" short-alias="orderItem"/>
+        <relationship type="one" related="moqui.screen.form.FormResponse" short-alias="formResponse"/>
+        <relationship type="one" related="mantle.party.Party" short-alias="party"/>
+        <relationship type="one" related="mantle.party.RoleType" short-alias="role"/>
+    </entity>
+    <entity entity-name="OrderItemParty" package="mantle.order" cache="never">
+        <field name="orderId" type="id" is-pk="true"/>
+        <field name="orderItemSeqId" type="id" is-pk="true"/>
+        <field name="partyId" type="id" is-pk="true"/>
+        <field name="roleTypeId" type="id" is-pk="true"/>
+        <relationship type="one" related="mantle.order.OrderItem" short-alias="orderItem"/>
+        <relationship type="one" related="mantle.party.Party" short-alias="party"/>
+        <relationship type="one-nofk" related="mantle.party.Person" short-alias="person"/>
+        <relationship type="one-nofk" related="mantle.party.Organization" short-alias="organization"/>
+        <relationship type="one" related="mantle.party.RoleType" short-alias="roleType"/>
+    </entity>
+
     <entity entity-name="OrderNote" package="mantle.order" cache="never">
         <field name="orderId" type="id" is-pk="true"/>
         <field name="noteDate" type="date-time" is-pk="true" default="ec.user.nowTimestamp"/>
-        <field name="noteText" type="text-long" enable-audit-log="true"/>
+        <field name="noteText" type="text-long" enable-audit-log="update"/>
         <field name="internalNote" type="text-indicator"/>
         <field name="userId" type="id" default="ec.user.userId"/>
         <relationship type="one" related="mantle.order.OrderHeader"/>
@@ -454,6 +543,8 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="carrierPartyId" type="id" enable-audit-log="update"/>
         <field name="shipmentMethodEnumId" type="id" enable-audit-log="update"/>
         <field name="tradeTermEnumId" type="id"/>
+        <field name="settlementTermId" type="id">
+            <description>Settlement (payment) term for auto order payments and set on Invoice(s) based on this OrderPart</description></field>
 
         <field name="postalContactMechId" type="id" enable-audit-log="update"/>
         <field name="telecomContactMechId" type="id"/>
@@ -514,6 +605,7 @@ along with this software (see the LICENSE.md file). If not, see
         <!-- For tradeTermEnumId terms are defined with enumTypeId="TermType" in AccountingAccountEntities.xml -->
         <relationship type="one" title="TermType" related="moqui.basic.Enumeration" short-alias="tradeTermEnum">
             <key-map field-name="tradeTermEnumId"/></relationship>
+        <relationship type="one" related="SettlementTerm" short-alias="settlementTerm"/>
 
         <relationship type="one" title="Postal" related="mantle.party.contact.ContactMech" short-alias="postal">
             <key-map field-name="postalContactMechId"/></relationship>
@@ -546,7 +638,8 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="orderPartSeqId" type="id" is-pk="true"/>
         <field name="partyId" type="id" is-pk="true"/>
         <field name="roleTypeId" type="id" is-pk="true"/>
-        <relationship type="one" related="mantle.order.OrderPart"/>
+        <field name="sequenceNum" type="number-integer"/>
+        <relationship type="one" related="mantle.order.OrderPart" short-alias="orderPart"/>
         <relationship type="one" related="mantle.party.Party" short-alias="party"/>
         <relationship type="one-nofk" related="mantle.party.Person" short-alias="person"/>
         <relationship type="one-nofk" related="mantle.party.Organization" short-alias="organization"/>
@@ -580,8 +673,14 @@ along with this software (see the LICENSE.md file). If not, see
         <field name="orderId" type="id" is-pk="true"/>
         <field name="orderItemSeqId" type="id" is-pk="true"/>
         <field name="workEffortId" type="id" is-pk="true"/>
+        <field name="requiredWork" type="text-indicator">
+            <description>If Y require WorkEffort Status of Complete, Closed, or Cancelled to consider OrderItem fulfilled</description></field>
+        <field name="forStatusId" type="id">
+            <description>Task must be Complete or Closed before change to this status (soft rule, depending on code in place)</description></field>
         <relationship type="one" related="mantle.order.OrderItem"/>
         <relationship type="one" related="mantle.work.effort.WorkEffort"/>
+        <relationship type="one" title="OrderHeader" related="moqui.basic.StatusItem" short-alias="forStatus">
+            <key-map field-name="forStatusId"/></relationship>
     </entity>
 
     <!-- ========================================================= -->
